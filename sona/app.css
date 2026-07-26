@@ -1,0 +1,217 @@
+/* ==========================================================================
+   SONA · 流声 — 应用样式(组件来自 SILK,这里只做布局与播放器专属件)
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+body { margin: 0; padding-bottom: 76px; font-family: var(--silk-font); }
+.spacer { flex: 1; }
+.dim { color: var(--silk-muted); }
+.mono { font-family: var(--silk-mono); font-size: 0.75rem; letter-spacing: 0.06em; }
+.zh { letter-spacing: 0.25em; font-size: 0.8em; color: var(--silk-muted); }
+.empty { color: var(--silk-muted); text-align: center; padding: 3rem 0; }
+.center { text-align: center; }
+h2 { font-size: 1.15rem; letter-spacing: -0.01em; margin: 0; }
+
+/* ---------- 顶栏 ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 40;
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.7rem clamp(1rem, 4vw, 2.5rem);
+  background: color-mix(in srgb, var(--silk-bg) 82%, transparent);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--silk-hairline);
+}
+.brand { font-weight: 800; letter-spacing: 0.08em; color: var(--silk-ink); text-decoration: none; }
+.nav { display: flex; gap: 0.25rem; }
+.nav-btn { background: none; }
+.nav-btn[data-current] { background: var(--silk-surface-2); }
+
+main { padding: 1.4rem clamp(1rem, 4vw, 2.5rem) 2rem; max-width: 1080px; margin: 0 auto; }
+.view { animation: view-in var(--silk-med) var(--silk-glide); }
+@keyframes view-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* ---------- 曲库 ---------- */
+.search { max-width: 380px; margin-bottom: 1rem; }
+.pl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem; }
+.pl-card { cursor: pointer; }
+.pl-card .cov {
+  display: block; aspect-ratio: 1.9; border-radius: var(--silk-r-md);
+  margin-bottom: 0.7rem; position: relative; overflow: hidden;
+}
+.pl-card .cov::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 85% 10%, rgba(255,255,255,0.28), transparent 55%);
+  mix-blend-mode: soft-light;
+}
+.pl-card strong { font-size: 0.95rem; }
+.pl-card p { margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--silk-muted); }
+.pl-new {
+  display: grid; place-items: center; min-height: 150px;
+  border: 1px dashed var(--silk-hairline); border-radius: var(--silk-r-lg);
+  color: var(--silk-muted); cursor: pointer; background: none; font: inherit;
+  transition: border-color var(--silk-fast) ease, color var(--silk-fast) ease,
+              transform var(--silk-fast) var(--silk-pop);
+}
+.pl-new:hover { border-color: var(--silk-accent); color: var(--silk-accent); }
+.pl-new:active { transform: scale(0.98); }
+
+.t-row .t-title { display: flex; flex-direction: column; min-width: 0; }
+.t-row .t-title strong { font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-row .t-title small { color: var(--silk-muted); }
+.t-row .t-dur { color: var(--silk-muted); font-family: var(--silk-mono); font-size: 0.75rem; }
+.t-row .eq { display: none; gap: 2px; align-items: flex-end; height: 14px; margin-right: 0.2rem; }
+.t-row[data-active] .eq { display: flex; }
+.t-row .eq i { width: 3px; background: var(--silk-accent); border-radius: 1px; animation: eq 0.9s ease-in-out infinite; }
+.t-row .eq i:nth-child(2) { animation-delay: 0.2s; }
+.t-row .eq i:nth-child(3) { animation-delay: 0.45s; }
+@keyframes eq { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+.t-row[data-paused] .eq i { animation-play-state: paused; }
+
+/* ---------- 歌单详情 ---------- */
+.pl-head { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.pl-cover { width: 84px; aspect-ratio: 1.6; border-radius: var(--silk-r-md); flex: none; }
+.pl-meta h2 { margin: 0; }
+.pl-meta p { margin: 0.2rem 0 0; font-size: 0.85rem; }
+
+/* ---------- 队列 ---------- */
+.q-head { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem; }
+.q-row[draggable="true"] { cursor: grab; }
+.q-row.dragging { opacity: 0.4; }
+.q-row.drop-above { box-shadow: inset 0 2px 0 var(--silk-accent); }
+.q-row.drop-below { box-shadow: inset 0 -2px 0 var(--silk-accent); }
+
+/* ---------- 工坊 ---------- */
+.forge-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; margin-top: 1.2rem; }
+@media (max-width: 760px) { .forge-grid { grid-template-columns: 1fr; } }
+.f-label { font-family: var(--silk-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--silk-muted); margin: 1.2rem 0 0.5rem; }
+.forge-form .f-label:first-child { margin-top: 0; }
+.mood-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.mood[data-current] { background: var(--silk-accent); color: var(--silk-accent-ink); }
+.seed-row { display: flex; gap: 0.6rem; align-items: flex-end; }
+.seed-row .silk-input { flex: 1; }
+.forge-actions { display: flex; gap: 0.6rem; margin-top: 1.6rem; }
+.forge-preview { display: grid; place-items: center; gap: 1rem; align-content: center; }
+.f-disc {
+  width: 170px; aspect-ratio: 1; border-radius: 50%;
+  background: var(--forge-bg, linear-gradient(135deg, hsl(262 72% 56%), hsl(314 82% 40%)));
+  box-shadow: var(--silk-shadow-2), inset 0 0 0 22px rgba(0, 0, 0, 0.25);
+  transition: transform var(--silk-med) var(--silk-glide);
+}
+.f-disc.spin { animation: disc-spin 3.2s linear infinite; }
+@keyframes disc-spin { to { transform: rotate(360deg); } }
+#diceBtn.rolling { animation: dice-roll var(--silk-slow) var(--silk-glide); }
+@keyframes dice-roll {
+  30% { transform: translateY(-10px) rotate(180deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}
+
+/* ---------- 迷你播放条 ---------- */
+.mini {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem clamp(1rem, 4vw, 2.5rem);
+  background: color-mix(in srgb, var(--silk-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--silk-hairline);
+}
+.mini-progress {
+  position: absolute; top: -1px; left: 0; height: 2px; width: 0%;
+  background: var(--silk-accent);
+}
+.mini-main {
+  display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0;
+  background: none; border: 0; cursor: pointer; font: inherit; color: inherit;
+  text-align: left; padding: 0.2rem; border-radius: var(--silk-r-md);
+  transition: background-color var(--silk-fast) ease;
+}
+.mini-main:hover { background: var(--silk-surface-2); }
+.mini-cover {
+  width: 44px; aspect-ratio: 1; border-radius: 10px; flex: none;
+  background: var(--mini-bg, var(--silk-surface-2));
+  transform: scale(var(--mini-pulse, 1));
+}
+.mini-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.mini-text strong { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-text small { font-size: 0.72rem; }
+
+/* 播放/暂停图标交换(SILK 图标按钮内);实心图标更清晰 */
+#miniPlay svg, #playBtn svg { grid-area: 1 / 1; transition: opacity var(--silk-fast) ease, transform var(--silk-fast) var(--silk-pop); }
+#miniPlay svg path, #playBtn svg path { fill: currentColor; stroke: none; }
+.ic-pause { opacity: 0; transform: scale(0.6); }
+[data-playing] .ic-play { opacity: 0; transform: scale(0.6); }
+[data-playing] .ic-pause { opacity: 1; transform: none; }
+
+/* ---------- 正在播放(重力歌词) ---------- */
+.np {
+  position: fixed; inset: 0; z-index: 80;
+  display: flex; flex-direction: column;
+  transform: translateY(0);
+  animation: np-in var(--silk-slow) var(--silk-glide);
+}
+.np[hidden] { display: none; }
+.np[data-closing] { animation: np-out var(--silk-med) var(--silk-glide) forwards; }
+@keyframes np-in { from { transform: translateY(100%); } }
+@keyframes np-out { to { transform: translateY(100%); } }
+.np-bg {
+  position: absolute; inset: 0;
+  background: var(--np-bg, linear-gradient(160deg, #23233f, #101114));
+  transform: scale(var(--np-pulse, 1));
+  transform-origin: center;
+}
+.np-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(120% 80% at 80% 8%, rgba(255,255,255,0.16), transparent 55%),
+              rgba(0, 0, 0, 0.25);
+}
+.np-close { position: absolute; top: 1rem; right: 1rem; z-index: 3; color: #fff; }
+.np-close:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.np-body {
+  position: relative; z-index: 2;
+  flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+  max-width: 760px; width: 100%; margin: 0 auto;
+  padding: 3.5rem clamp(1rem, 4vw, 2rem) 2rem;
+  color: #fff;
+}
+#lyricCanvas { flex: 1; width: 100%; min-height: 0; }
+.np-nextline { text-align: center; color: rgba(255, 255, 255, 0.5); min-height: 1.4em; margin: 0.4rem 0 1rem; font-size: 0.9rem; }
+.np-meta h2 { color: #fff; font-size: 1.3rem; }
+.np-meta p { margin: 0.15rem 0 0; color: rgba(255, 255, 255, 0.65); }
+.np-progress { display: flex; align-items: center; gap: 0.8rem; margin: 1.1rem 0 0.4rem; }
+.np-progress silk-slider { flex: 1; }
+.np-progress .mono { color: rgba(255, 255, 255, 0.7); }
+.np .silk-track { background: rgba(255, 255, 255, 0.22); }
+.np .silk-fill { background: #fff; }
+.np .silk-thumb { background: #fff; }
+.np-controls { display: flex; align-items: center; justify-content: center; gap: 1.2rem; margin-top: 0.6rem; }
+.np-controls .silk-icon-btn { color: rgba(255, 255, 255, 0.85); }
+.np-controls .silk-icon-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+.np-big svg { width: 26px; height: 26px; }
+.np-play {
+  width: 64px; height: 64px;
+  background: #fff; color: #16161d;
+}
+.np-play:hover { background: #fff; color: #000; }
+.np-play svg { width: 30px; height: 30px; }
+.np-side { display: flex; align-items: center; gap: 0.5rem; width: 96px; justify-content: center; position: relative; }
+.np-side .mono { color: rgba(255, 255, 255, 0.55); }
+#repeatBtn[data-active] { color: #fff; background: rgba(255, 255, 255, 0.18); }
+#repeatBtn sup {
+  position: absolute; font: 700 0.6rem var(--silk-mono);
+  transform: translate(9px, -8px); color: #fff;
+}
+.np-volume { display: flex; align-items: center; gap: 0.8rem; max-width: 260px; margin: 1rem auto 0; width: 100%; }
+.vol-ic { width: 20px; height: 20px; fill: none; stroke: rgba(255,255,255,0.7); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.np silk-switch { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.15); }
+.np silk-switch[checked] { background: #fff; }
+.np silk-switch[checked]::after { background: #16161d; }
+
+@media (prefers-reduced-motion: reduce) {
+  .view { animation: none; }
+  .np, .np[data-closing] { animation-duration: var(--silk-fade); animation-name: silk-fade-in; }
+  .np[data-closing] { animation-name: silk-fade-out; }
+  .t-row .eq i { animation: none; height: 8px; }
+  .f-disc.spin { animation: none; }
+  .np-bg { transform: none; }
+  .mini-cover { transform: none; }
+}

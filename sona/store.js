@@ -282,6 +282,14 @@ export function createStore({ engine, persist, flags, now = () => Date.now() }) 
       emit();
     },
 
+    queueJump(pos) {                          // 队列内直接跳到某条目
+      if (pos < 0 || pos >= p.playOrder.length) return;
+      p.index = pos;
+      loadCurrent({ autoplay: true });
+      savePlayerDebounced();
+      emit();
+    },
+
     queueClear() {                            // 确认后调用:停止播放
       p.entries = {};
       p.sourceQueue = [];

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="SONA · 流声 — 生成式音乐播放器:你的歌单,甚至你的曲目,都由你创造。">
+  <title>SONA · 流声</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235B5BD6'/%3E%3Cpath d='M10 20c2-1 2-7 4-7s2 8 4 8 2-9 4-9' stroke='%23fff' stroke-width='2.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <script>
+    (() => { try { const t = localStorage.getItem('silk-theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {} })();
+  </script>
+  <link rel="stylesheet" href="../silk/silk.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body class="silk-root">
+
+  <header class="bar">
+    <a class="brand" href="#" id="brand">SONA <span class="zh">流声</span></a>
+    <nav class="nav">
+      <button class="silk-btn nav-btn" data-view="library" data-current>曲库</button>
+      <button class="silk-btn nav-btn" data-view="queue">队列</button>
+      <button class="silk-btn nav-btn" data-view="forge">声音工坊</button>
+    </nav>
+    <span class="spacer"></span>
+    <button class="silk-icon-btn" id="exportBtn" aria-label="导出数据" title="导出数据">
+      <svg viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M5 19h14"/></svg>
+    </button>
+    <button class="silk-icon-btn" id="importBtn" aria-label="导入数据" title="导入数据">
+      <svg viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 19h14"/></svg>
+    </button>
+    <button class="silk-icon-btn" id="themeBtn" aria-label="切换主题" title="切换主题">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M21 12h-2M5 12H3M18.4 5.6l-1.5 1.5M7.1 16.9l-1.5 1.5M18.4 18.4l-1.5-1.5M7.1 7.1 5.6 5.6"/></svg>
+    </button>
+    <input type="file" id="importFile" accept="application/json" hidden>
+  </header>
+
+  <main>
+    <!-- 曲库 -->
+    <section class="view" id="view-library">
+      <label class="silk-input search"><span>搜索</span>
+        <input id="searchInput" type="search" placeholder="曲名 / 歌手…"></label>
+      <silk-tabs id="libTabs">
+        <silk-tab label="歌单"><div class="pl-grid" id="playlistGrid"></div></silk-tab>
+        <silk-tab label="全部曲目"><ul class="silk-list" id="trackList"></ul></silk-tab>
+        <silk-tab label="我的创作">
+          <ul class="silk-list" id="mineList"></ul>
+          <p class="empty" id="mineEmpty" hidden>还没有你的作品——去声音工坊造一首。</p>
+        </silk-tab>
+      </silk-tabs>
+    </section>
+
+    <!-- 歌单详情 -->
+    <section class="view" id="view-playlist" hidden>
+      <div class="pl-head">
+        <button class="silk-icon-btn" id="plBack" aria-label="返回">
+          <svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"/></svg>
+        </button>
+        <span class="pl-cover" id="plCover"></span>
+        <div class="pl-meta">
+          <h2 id="plTitle"></h2>
+          <p class="dim" id="plDesc"></p>
+        </div>
+        <span class="spacer"></span>
+        <button class="silk-btn" data-variant="primary" id="plPlayAll">播放全部</button>
+        <silk-dropdown id="plMore">
+          <button class="silk-icon-btn" aria-label="歌单操作">
+            <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+          </button>
+          <div class="silk-menu">
+            <button data-value="rename">重命名</button>
+            <button data-value="delete">删除歌单</button>
+          </div>
+        </silk-dropdown>
+      </div>
+      <ul class="silk-list" id="plTracks"></ul>
+      <p class="empty" id="plEmpty" hidden>这个歌单还空着——从「全部曲目」里加几首。</p>
+    </section>
+
+    <!-- 队列 -->
+    <section class="view" id="view-queue" hidden>
+      <div class="q-head">
+        <h2>播放队列</h2>
+        <span class="dim" id="qCount"></span>
+        <span class="spacer"></span>
+        <button class="silk-btn" data-variant="ghost" id="qClear">清空</button>
+      </div>
+      <ul class="silk-list" id="queueList"></ul>
+      <p class="empty" id="qEmpty" hidden>队列是空的。挑首歌,或者让沉默继续。</p>
+    </section>
+
+    <!-- 声音工坊 -->
+    <section class="view" id="view-forge" hidden>
+      <h2>声音工坊 <span class="dim mono" id="forgeQuota"></span></h2>
+      <div class="forge-grid">
+        <div class="silk-card forge-form">
+          <p class="f-label">情绪</p>
+          <div class="mood-row" id="moodRow">
+            <button class="silk-btn mood" data-mood="calm" data-current>calm · 沉静</button>
+            <button class="silk-btn mood" data-mood="bright">bright · 明亮</button>
+            <button class="silk-btn mood" data-mood="drive">drive · 驱动</button>
+          </div>
+          <p class="f-label">色相 <span class="mono" id="hueVal">262°</span></p>
+          <silk-slider id="hueSlider" min="0" max="359" value="262" aria-label="色相"></silk-slider>
+          <p class="f-label">时长 <span class="mono" id="durVal">2:30</span></p>
+          <silk-slider id="durSlider" min="60" max="300" value="150" step="10" aria-label="时长"></silk-slider>
+          <p class="f-label">种子</p>
+          <div class="seed-row">
+            <label class="silk-input"><span>SEED</span><input id="seedInput" inputmode="numeric" value="42"></label>
+            <button class="silk-btn" id="diceBtn" aria-label="随机种子">🎲 掷一个</button>
+          </div>
+          <div class="forge-actions">
+            <button class="silk-btn" data-variant="ghost" id="previewBtn">试听</button>
+            <button class="silk-btn" data-variant="primary" id="saveBtn">保存这首曲子</button>
+          </div>
+        </div>
+        <div class="silk-card forge-preview">
+          <div class="f-disc" id="forgeDisc"></div>
+          <p class="dim center">同一颗种子,永远长出同一首歌。<br>掷骰子只是仪式——结果早已注定。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 正在播放(重力歌词) -->
+  <div class="np" id="npSheet" role="dialog" aria-modal="true" aria-label="正在播放" hidden>
+    <div class="np-bg" id="npBg"></div>
+    <button class="silk-icon-btn np-close" id="npClose" aria-label="收起">
+      <svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+    <div class="np-body">
+      <canvas id="lyricCanvas" aria-hidden="true"></canvas>
+      <p class="np-nextline dim" id="npNextLine"></p>
+      <div class="np-meta">
+        <h2 id="npTitle"></h2>
+        <p class="dim" id="npArtist"></p>
+      </div>
+      <div class="np-progress">
+        <span class="mono" id="npTime">0:00</span>
+        <silk-slider id="progressSlider" min="0" max="100" value="0" aria-label="播放进度"></silk-slider>
+        <span class="mono" id="npDur">0:00</span>
+      </div>
+      <div class="np-controls">
+        <div class="np-side">
+          <silk-switch id="shuffleSwitch" aria-label="随机播放"></silk-switch>
+          <span class="mono dim">随机</span>
+        </div>
+        <button class="silk-icon-btn np-big" id="prevBtn" aria-label="上一首">
+          <svg viewBox="0 0 24 24"><path d="M17 5v14l-9-7zM7 5v14"/></svg>
+        </button>
+        <button class="silk-icon-btn np-play" id="playBtn" aria-label="播放 / 暂停">
+          <svg class="ic-play" viewBox="0 0 24 24"><path d="M8.5 5.5v13l11-6.5z"/></svg>
+          <svg class="ic-pause" viewBox="0 0 24 24"><path d="M8 5.5h2.8v13H8zM13.2 5.5H16v13h-2.8z"/></svg>
+        </button>
+        <button class="silk-icon-btn np-big" id="nextBtn" aria-label="下一首">
+          <svg viewBox="0 0 24 24"><path d="M7 5v14l9-7zM17 5v14"/></svg>
+        </button>
+        <div class="np-side">
+          <button class="silk-icon-btn" id="repeatBtn" aria-label="循环模式:关">
+            <svg viewBox="0 0 24 24"><path d="M17 4l3 3-3 3"/><path d="M20 7H7a4 4 0 0 0-4 4v1"/><path d="M7 20l-3-3 3-3"/><path d="M4 17h13a4 4 0 0 0 4-4v-1"/></svg>
+            <sup id="repeatOne" hidden>1</sup>
+          </button>
+          <span class="mono dim" id="repeatLabel">关</span>
+        </div>
+      </div>
+      <div class="np-volume">
+        <svg viewBox="0 0 24 24" class="vol-ic"><path d="M4 10v4h4l5 4V6l-5 4z"/><path d="M16.5 9.5a4 4 0 0 1 0 5"/></svg>
+        <silk-slider id="volumeSlider" min="0" max="100" value="80" aria-label="音量"></silk-slider>
+      </div>
+    </div>
+  </div>
+
+  <!-- 迷你播放条 -->
+  <footer class="mini" id="miniBar">
+    <div class="mini-progress" id="miniProgress"></div>
+    <button class="mini-main" id="miniOpen" aria-label="展开正在播放">
+      <span class="mini-cover" id="miniCover"></span>
+      <span class="mini-text">
+        <strong id="miniTitle">未在播放</strong>
+        <small class="dim" id="miniArtist">选一首歌开始</small>
+      </span>
+    </button>
+    <span class="silk-badge" data-tone="accent" id="previewBadge" hidden>试听中</span>
+    <button class="silk-icon-btn" id="miniPlay" aria-label="播放 / 暂停">
+      <svg class="ic-play" viewBox="0 0 24 24"><path d="M8.5 5.5v13l11-6.5z"/></svg>
+      <svg class="ic-pause" viewBox="0 0 24 24"><path d="M8 5.5h2.8v13H8zM13.2 5.5H16v13h-2.8z"/></svg>
+    </button>
+    <button class="silk-icon-btn" id="miniNext" aria-label="下一首">
+      <svg viewBox="0 0 24 24"><path d="M7 5v14l9-7zM17 5v14"/></svg>
+    </button>
+  </footer>
+
+  <!-- 通用弹窗 -->
+  <silk-modal id="confirmModal" title="确认">
+    <div class="silk-modal-body" id="confirmBody"></div>
+    <div class="silk-modal-foot">
+      <button class="silk-btn" data-variant="ghost" id="confirmNo">先不了</button>
+      <button class="silk-btn" data-variant="danger" id="confirmYes">确认</button>
+    </div>
+  </silk-modal>
+
+  <silk-modal id="promptModal" title="命名">
+    <label class="silk-input"><span id="promptLabel">名称</span>
+      <input id="promptInput" maxlength="24"><em class="silk-error" id="promptError"></em></label>
+    <div class="silk-modal-foot">
+      <button class="silk-btn" data-variant="ghost" id="promptNo">取消</button>
+      <button class="silk-btn" data-variant="primary" id="promptYes">好了</button>
+    </div>
+  </silk-modal>
+
+  <silk-modal id="pickModal" title="加入歌单">
+    <div class="silk-modal-body"><ul class="silk-list" id="pickList"></ul></div>
+    <div class="silk-modal-foot">
+      <button class="silk-btn" data-variant="ghost" id="pickNo">取消</button>
+    </div>
+  </silk-modal>
+
+  <silk-modal id="limitModal" title="已到上限">
+    <div class="silk-modal-body" id="limitBody"></div>
+    <div class="silk-modal-foot">
+      <button class="silk-btn" data-variant="ghost" id="limitNo">先不了</button>
+      <button class="silk-btn" data-variant="primary" id="limitUp">升级(演示)</button>
+    </div>
+  </silk-modal>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
