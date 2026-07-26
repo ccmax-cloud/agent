@@ -15,6 +15,48 @@ const $ = (s, r = document) => r.querySelector(s);
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const grad = (h) => `linear-gradient(135deg, hsl(${h} 72% 56%), hsl(${(h + 52) % 360} 82% 40%))`;
+
+/* 封面:按种子生成的暗底波形纹理,每首唯一 */
+const mulberry32 = (a) => () => {
+  a |= 0; a = (a + 0x6D2B79F5) | 0;
+  let t = Math.imul(a ^ (a >>> 15), 1 | a);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const idSeed = (s) => [...String(s)].reduce((a, ch) => (Math.imul(a, 31) + ch.charCodeAt(0)) | 0, 7) >>> 0;
+const artCache = new Map();
+function coverArt(seed, hue, w = 96, h = 96) {
+  const key = `${seed}|${hue}|${w}x${h}`;
+  if (artCache.has(key)) return artCache.get(key);
+  const c = document.createElement('canvas');
+  c.width = w * 2; c.height = h * 2;
+  const x = c.getContext('2d');
+  x.fillStyle = '#14151A';
+  x.fillRect(0, 0, c.width, c.height);
+  const rnd = mulberry32(seed * 7 + 1);
+  [[0.9, 2.6, 0.40], [0.42, 1.8, 0.55], [0.16, 1.2, 0.70]].forEach(([alpha, lw, base]) => {
+    x.strokeStyle = `hsla(${hue} 60% 62% / ${alpha})`;
+    x.lineWidth = lw * 2;
+    const n = 26;
+    const pts = [];
+    let y = c.height * base;
+    for (let i = 0; i <= n; i++) {
+      y = y * 0.55 + (c.height * (base - 0.28 + rnd() * 0.56)) * 0.45;
+      pts.push([(i / n) * c.width, y]);
+    }
+    x.beginPath();
+    x.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < n; i++) {
+      x.quadraticCurveTo(pts[i][0], pts[i][1],
+        (pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2);
+    }
+    x.stroke();
+  });
+  const url = c.toDataURL('image/png');
+  artCache.set(key, url);
+  return url;
+}
+const trackArt = (t, w = 48, h = 48) => coverArt(t.seed, t.hue, w, h);
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -98,7 +140,7 @@ function pickPlaylist() {
     const pls = store.state.library.userPlaylists;
     list.innerHTML = pls.length
       ? pls.map((p) => `<li class="silk-list-item" data-id="${p.id}">
-          <span class="silk-avatar" style="--silk-av-bg:${grad(p.hue)}">${esc(p.name[0])}</span>
+          <img class="art" src="${coverArt(idSeed(p.id), p.hue)}" alt="">
           <span>${esc(p.name)}<br><small class="dim">${p.trackIds.length} 首</small></span></li>`).join('')
       : '<li class="empty">还没有歌单 — 先去「歌单」页建一个。</li>';
     const onClick = (e) => {
@@ -127,12 +169,12 @@ function limitDialog(kind) {
       ? `免费层包含 ${LIMITS.free.tracks} 首创作。`
       : `免费层包含 ${LIMITS.free.playlists} 个歌单。`;
     $('#limitBody').textContent =
-      `${n} 这是个演示项目:「升级」不会收费,数据只存在这台浏览器里。也可以删掉旧的腾出位置。`;
+      `${n}「升级」是演示功能,不收费,数据只存在本机。也可以删除旧内容腾出位置。`;
     const up = () => {
       flags.upgrade();
       try { localStorage.setItem('sona-tier', 'premium'); } catch (_) { /* */ }
       cleanup(); m.close('up');
-      toast('已升级(演示)。上限已解除。');
+      toast('已解除上限(演示)');
       res(true);
     };
     const onClose = () => { cleanup(); res(false); };
@@ -179,7 +221,7 @@ function trackRow(t, { removable = false, index = -1 } = {}) {
   const mine = t.id.startsWith('u');
   return `<li class="silk-list-item t-row" data-id="${t.id}" data-index="${index}"
              ${active ? 'data-active' : ''} ${active && !store.state.player.playing ? 'data-paused' : ''}>
-    <span class="silk-avatar" style="--silk-av-bg:${grad(t.hue)}">${esc(t.title[0])}</span>
+    <img class="art" src="${trackArt(t)}" alt="">
     <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
     <span class="t-title"><strong>${esc(t.title)}</strong><small>${esc(t.artist)} · ${esc(t.album)}</small></span>
     <span class="spacer"></span>
@@ -206,14 +248,14 @@ async function handleTrackAction(trackId, action, ctx) {
   const a = store.actions;
   switch (action) {
     case 'play': a.playContext(ctx.list, ctx.list.indexOf(trackId)); openNP(); break;
-    case 'next': a.queueAddNext(trackId); toast('将在当前曲后播放。'); break;
-    case 'queue': a.queueAdd(trackId); toast('已加入队列。'); break;
+    case 'next': a.queueAddNext(trackId); toast('将在当前曲之后播放'); break;
+    case 'queue': a.queueAdd(trackId); toast('已加入队列'); break;
     case 'addto': {
       const plId = await pickPlaylist();
       if (plId) {
         a.playlistAddTrack(plId, trackId);
         const pl = store.state.library.userPlaylists.find((x) => x.id === plId);
-        toast(`已加入「${pl.name}」。`);
+        toast(`已加入「${pl.name}」`);
       }
       break;
     }
@@ -232,9 +274,9 @@ async function handleTrackAction(trackId, action, ctx) {
     }
     case 'delete': {
       const t = store.resolve(trackId);
-      if (await confirmDialog('删除这首创作?', `「${t.title}」将从曲库、所有歌单和队列中移除。这一步没有撤销。`, '删除')) {
+      if (await confirmDialog('删除这首创作?', `「${t.title}」将从曲库、歌单和队列中移除,不可撤销。`, '删除')) {
         a.trackDelete(trackId);
-        toast('已删除。位置空出来了。');
+        toast('已删除');
       }
       break;
     }
@@ -271,7 +313,7 @@ function renderPlaylists() {
   $('#playlistGrid').innerHTML =
     [...officials, ...mine].map((p) => `
       <div class="silk-card pl-card" data-hover data-id="${p.id}" data-official="${p.official ? 1 : ''}">
-        <span class="cov" style="background:${grad(p.hue)}"></span>
+        <img class="cov" src="${coverArt(idSeed(p.id), p.hue, 300, 158)}" alt="">
         <strong>${esc(p.name)}</strong>
         <p>${esc(p.desc || '')} · ${p.trackIds.length} 首</p>
       </div>`).join('') +
@@ -283,7 +325,7 @@ function renderPlaylists() {
     const name = await promptName('新建歌单', '歌单名称');
     if (!name) return;
     const pl = store.actions.playlistCreate(name, '', Math.floor(Math.random() * 360));
-    if (pl) toast(`歌单「${pl.name}」已创建。`);
+    if (pl) toast(`歌单「${pl.name}」已创建`);
   });
 }
 $('#playlistGrid').addEventListener('click', (e) => {
@@ -331,7 +373,7 @@ function currentPl() {
 function renderPlaylistView() {
   const pl = currentPl();
   if (!pl) { showView('library'); return; }
-  $('#plCover').style.background = grad(pl.hue);
+  $('#plCover').style.background = `url(${coverArt(idSeed(pl.id), pl.hue, 168, 105)}) center/cover`;
   $('#plTitle').textContent = pl.name;
   $('#plDesc').textContent = `${pl.desc || (openPl.official ? '官方歌单' : '我的歌单')} · ${pl.trackIds.length} 首`;
   $('#plMore').style.display = openPl.official ? 'none' : '';
@@ -353,10 +395,10 @@ $('#plMore').addEventListener('select', async (e) => {
     const name = await promptName('重命名歌单', '歌单名称', pl.name);
     if (name) store.actions.playlistRename(pl.id, name);
   } else if (e.detail.value === 'delete') {
-    if (await confirmDialog('删除歌单?', `「${pl.name}」含 ${pl.trackIds.length} 首曲目。6 秒内可以后悔。`, '删除')) {
+    if (await confirmDialog('删除歌单?', `「${pl.name}」含 ${pl.trackIds.length} 首曲目,删除后 6 秒内可撤销。`, '删除')) {
       const removed = store.actions.playlistDelete(pl.id);
       showView('library');
-      toast(`歌单「${removed.name}」已删除。`, {
+      toast(`歌单「${removed.name}」已删除`, {
         actionLabel: '撤销',
         onAction: () => store.actions.playlistRestore(removed),
       });
@@ -374,7 +416,7 @@ function renderQueue() {
     const active = i === p.index;
     return `<li class="silk-list-item t-row q-row" draggable="true" data-pos="${i}"
                ${active ? 'data-active' : ''} ${active && !p.playing ? 'data-paused' : ''}>
-      <span class="silk-avatar" style="--silk-av-bg:${grad(t.hue)}">${esc(t.title[0])}</span>
+      <img class="art" src="${trackArt(t)}" alt="">
       <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
       <span class="t-title"><strong>${esc(t.title)}</strong><small>${esc(t.artist)}</small></span>
       <span class="spacer"></span>
@@ -432,9 +474,9 @@ $('#queueList').addEventListener('dragend', () => { dragPos = null; renderQueue(
 
 $('#qClear').addEventListener('click', async () => {
   if (!store.state.player.playOrder.length) return;
-  if (await confirmDialog('清空队列?', `${store.state.player.playOrder.length} 首曲目将被移除,正在播放的会停下来。`, '清空')) {
+  if (await confirmDialog('清空队列?', `${store.state.player.playOrder.length} 首曲目将被移除,播放会停止。`, '清空')) {
     store.actions.queueClear();
-    toast('队列已清空。');
+    toast('队列已清空');
   }
 });
 
@@ -446,8 +488,7 @@ let previewing = false;
 function renderForge() {
   $('#hueVal').textContent = `${forge.hue}°`;
   $('#durVal').textContent = fmt(forge.dur);
-  $('#forgeDisc').style.setProperty('--forge-bg', grad(forge.hue));
-  $('#forgeDisc').style.background = grad(forge.hue);
+  $('#forgeDisc').style.background = `url(${coverArt(forge.seed, forge.hue, 200, 200)}) center/cover`;
   const n = store.state.library.userTracks.length;
   $('#forgeQuota').textContent = flags.tier === 'premium' ? `${n} 首 · 高级层` : `${n}/${LIMITS.free.tracks} · 免费层`;
 }
@@ -505,7 +546,7 @@ $('#saveBtn').addEventListener('click', async () => {
   const t = store.actions.trackForge({ title: name, mood: forge.mood, hue: forge.hue, dur: forge.dur, seed: forge.seed });
   if (!t) return;
   stopPreview();
-  toast(`「${t.title}」已入库,在「我的创作」等你。`);
+  toast('已保存到「我的创作」');
 });
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) stopPreview(); });
@@ -563,7 +604,7 @@ function renderMini() {
   const p = store.state.player;
   $('#miniTitle').textContent = t ? t.title : '未在播放';
   $('#miniArtist').textContent = t ? t.artist : '选一首歌开始';
-  $('#miniCover').style.background = t ? grad(t.hue) : '';
+  $('#miniCover').style.background = t ? `url(${trackArt(t, 88, 88)}) center/cover` : '';
   $('#miniPlay').toggleAttribute('data-playing', p.playing);
   $('#miniPlay').disabled = !t;
   $('#miniNext').disabled = !t;
@@ -579,7 +620,7 @@ function renderNP() {
   const p = store.state.player;
   $('#npTitle').textContent = t.title;
   $('#npArtist').textContent = `${t.artist} · ${t.album}`;
-  $('#npBg').style.setProperty('--np-bg', `linear-gradient(160deg, hsl(${t.hue} 60% 30%), hsl(${(t.hue + 52) % 360} 65% 12%))`);
+  $('#npBg').style.setProperty('--np-bg', `linear-gradient(160deg, hsl(${t.hue} 26% 16%), hsl(${(t.hue + 52) % 360} 22% 7%))`);
   $('#npDur').textContent = fmt(t.dur);
   const ps = $('#progressSlider');
   ps.setAttribute('max', String(t.dur));
@@ -791,7 +832,7 @@ $('#exportBtn').addEventListener('click', () => {
   a.download = 'sona-backup.json';
   a.click();
   URL.revokeObjectURL(a.href);
-  toast('已导出 sona-backup.json。');
+  toast('已导出 sona-backup.json');
 });
 $('#importBtn').addEventListener('click', () => $('#importFile').click());
 $('#importFile').addEventListener('change', async (e) => {

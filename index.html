@@ -4,71 +4,112 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="四个渐进式前端作品:粒子物理页、流媒体界面、UI 组件库、生成式音乐播放器。零依赖,纯手写。">
-  <title>前端实验室 · Frontend Lab</title>
+  <meta name="description" content="四个前端项目:粒子交互页、流媒体界面、UI 组件库、生成式音乐播放器。零依赖。">
+  <title>Frontend Lab</title>
   <script>
     (() => { try { const t = localStorage.getItem('silk-theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {} })();
   </script>
-  <link rel="stylesheet" href="silk/silk.css">
+  <link rel="stylesheet" href="silk/tokens.css">
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--silk-font); padding: 3rem clamp(1rem, 5vw, 4rem) 5rem; max-width: 1100px; margin-inline: auto; }
-    header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.6rem; }
-    h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -0.02em; margin: 0; }
-    .sub { color: var(--silk-muted); max-width: 62ch; line-height: 1.7; margin: 0 0 2.5rem; }
-    .spacer { flex: 1; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.2rem; }
-    a.proj { text-decoration: none; color: inherit; display: block; }
-    .cov { display: block; aspect-ratio: 16/9; border-radius: var(--silk-r-md); margin-bottom: 0.9rem; position: relative; overflow: hidden; }
-    .cov::after { content: ""; position: absolute; inset: 0;
-      background: radial-gradient(120% 90% at 85% 10%, rgba(255,255,255,0.25), transparent 55%); mix-blend-mode: soft-light; }
-    .cov b { position: absolute; inset: 0; display: grid; place-items: center;
-      font: 800 2rem/1 var(--silk-font); letter-spacing: 0.1em; color: rgba(255,255,255,0.92);
-      text-shadow: 0 2px 14px rgba(0,0,0,0.3); }
-    .proj h2 { font-size: 1.05rem; margin: 0 0 0.25rem; display: flex; gap: 0.5rem; align-items: center; }
-    .proj p { margin: 0; font-size: 0.88rem; color: var(--silk-muted); line-height: 1.6; }
-    footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--silk-hairline);
-      color: var(--silk-muted); font-family: var(--silk-mono); font-size: 0.75rem; letter-spacing: 0.06em; }
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: var(--silk-font);
+      color: var(--silk-ink);
+      background: var(--silk-bg);
+      padding: clamp(2.5rem, 7vh, 5rem) clamp(1.25rem, 6vw, 5rem) 4rem;
+      max-width: 1040px;
+      margin-inline: auto;
+      line-height: 1.6;
+    }
+    .mono { font-family: var(--silk-mono); font-size: 0.72rem; letter-spacing: 0.1em;
+            text-transform: uppercase; color: var(--silk-muted); }
+    header { display: flex; align-items: baseline; gap: 1.2rem; }
+    h1 { font-size: 1.35rem; letter-spacing: -0.01em; font-weight: 650; }
+    .theme-btn {
+      margin-left: auto; font: 500 0.8rem var(--silk-font); color: var(--silk-muted);
+      background: none; border: 1px solid var(--silk-hairline); border-radius: 6px;
+      padding: 0.35rem 0.7rem; cursor: pointer;
+    }
+    .theme-btn:hover { color: var(--silk-ink); border-color: var(--silk-muted); }
+    .intro { color: var(--silk-muted); max-width: 56ch; margin: 0.8rem 0 3rem; font-size: 0.95rem; }
+    .list { display: flex; flex-direction: column; }
+    a.proj {
+      display: grid; grid-template-columns: 300px 1fr; gap: 1.6rem; align-items: center;
+      padding: 1.6rem 0; border-top: 1px solid var(--silk-hairline);
+      text-decoration: none; color: inherit;
+    }
+    a.proj:last-child { border-bottom: 1px solid var(--silk-hairline); }
+    .shot {
+      display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top;
+      border: 1px solid var(--silk-hairline); border-radius: 8px;
+      background: var(--silk-surface-2);
+    }
+    a.proj:hover .shot { border-color: var(--silk-muted); }
+    a.proj:hover h2 span { text-decoration: underline; text-underline-offset: 3px; }
+    .meta h2 { font-size: 1rem; font-weight: 650; display: flex; align-items: baseline; gap: 0.7rem; }
+    .meta h2 .mono { font-weight: 500; }
+    .meta p { color: var(--silk-muted); font-size: 0.9rem; margin-top: 0.35rem; max-width: 52ch; }
+    footer { margin-top: 2.5rem; display: flex; gap: 1.5rem; }
+    footer a { color: var(--silk-muted); text-decoration: none; font-size: 0.8rem; }
+    footer a:hover { color: var(--silk-ink); }
+    @media (max-width: 720px) {
+      a.proj { grid-template-columns: 1fr; gap: 0.9rem; }
+    }
   </style>
 </head>
-<body class="silk-root">
+<body>
   <header>
-    <h1>前端实验室</h1>
-    <span class="silk-badge" data-tone="accent">4 projects</span>
-    <span class="spacer"></span>
-    <button class="silk-btn" id="themeBtn">切换主题</button>
+    <h1>Frontend Lab</h1>
+    <span class="mono">4 projects · zero deps</span>
+    <button class="theme-btn" id="themeBtn">主题</button>
   </header>
-  <p class="sub">四个渐进式作品:从一个会塌的标题,到一套组件库,再到一台真的会响的播放器。
-    全部零依赖、纯手写,每一个都经过多智能体对抗审查与真实浏览器验证。</p>
+  <p class="intro">四个前端项目,不用任何第三方库。代码、设计文档和测试都在仓库里。</p>
 
-  <div class="grid">
-    <a class="proj silk-card" data-hover href="gravity-room/">
-      <span class="cov" style="background: linear-gradient(160deg, #0E0F13, #23233f)"><b>GRAVITY</b></span>
-      <h2>GRAVITY ROOM · 重力房间 <span class="silk-badge">物理</span></h2>
-      <p>标题由 2,000 个粒子组成。拉下重力拉杆,文字塌成沙,光标翻搅,再拉一次逐粒归位。</p>
+  <div class="list">
+    <a class="proj" href="sona/">
+      <img class="shot" src="assets/cover-sona.jpg" alt="SONA 正在播放页,歌词由粒子组成" loading="lazy">
+      <span class="meta">
+        <h2><span>SONA</span><span class="mono">音乐播放器</span></h2>
+        <p>曲目由种子实时合成,不加载任何音频文件。支持自建歌单、生成自己的曲目;播放页的歌词由粒子构成,会随鼓点散开。</p>
+      </span>
     </a>
-    <a class="proj silk-card" data-hover href="luma/">
-      <span class="cov" style="background: linear-gradient(135deg, hsl(18 72% 56%), hsl(70 82% 40%))"><b>LUMA</b></span>
-      <h2>LUMA · 流光媒体 <span class="silk-badge">应用 UI</span></h2>
-      <p>现代简约的流媒体界面:View Transitions 转场、双主题、迷你播放器、丝滑到底的动效体系。</p>
+    <a class="proj" href="luma/">
+      <img class="shot" src="assets/cover-luma.jpg" alt="LUMA 首页,视频卡片网格" loading="lazy">
+      <span class="meta">
+        <h2><span>LUMA</span><span class="mono">流媒体界面</span></h2>
+        <p>视频平台界面:侧栏、筛选、播放层、迷你播放器。View Transitions 转场,明暗双主题。</p>
+      </span>
     </a>
-    <a class="proj silk-card" data-hover href="silk/demo.html">
-      <span class="cov" style="background: linear-gradient(135deg, hsl(242 60% 56%), hsl(294 70% 40%))"><b>SILK</b></span>
-      <h2>SILK · 丝 <span class="silk-badge">组件库</span></h2>
-      <p>设计令牌驱动的零依赖组件库:14 类组件、双主题、无障碍内建。换品牌只需改一个文件。</p>
+    <a class="proj" href="silk/demo.html">
+      <img class="shot" src="assets/cover-silk.jpg" alt="SILK 组件库画廊" loading="lazy">
+      <span class="meta">
+        <h2><span>SILK</span><span class="mono">组件库</span></h2>
+        <p>14 类常用组件,设计令牌驱动,换品牌只改一个文件。键盘操作和 reduced-motion 都处理过。SONA 的界面就是用它拼的。</p>
+      </span>
     </a>
-    <a class="proj silk-card" data-hover href="sona/">
-      <span class="cov" style="background: linear-gradient(160deg, hsl(262 60% 35%), hsl(314 65% 14%))"><b>SONA</b></span>
-      <h2>SONA · 流声 <span class="silk-badge" data-tone="live">生成式</span></h2>
-      <p>真的会响的音乐播放器:曲目由种子实时合成,歌词是会被鼓点击散的粒子。你的歌单,甚至你的曲目,都由你创造。</p>
+    <a class="proj" href="gravity-room/">
+      <img class="shot" src="assets/cover-gravity.jpg" alt="GRAVITY ROOM 粒子标题" loading="lazy">
+      <span class="meta">
+        <h2><span>GRAVITY ROOM</span><span class="mono">交互实验</span></h2>
+        <p>标题由两千个粒子组成。拉下重力开关,文字塌下来;再拉一次,逐粒归位。</p>
+      </span>
     </a>
   </div>
 
-  <footer>ZERO DEPENDENCIES · HAND-DRAWN PHYSICS · REVIEWED BY ADVERSARIAL AGENTS</footer>
+  <footer>
+    <a href="https://github.com/ccmax-cloud/agent">GitHub</a>
+    <a href="sona/DESIGN.md">设计文档</a>
+  </footer>
 
-  <script type="module">
-    import { toggleTheme } from './silk/silk.js';
-    document.getElementById('themeBtn').addEventListener('click', () => toggleTheme());
+  <script>
+    document.getElementById('themeBtn').addEventListener('click', () => {
+      const root = document.documentElement;
+      const dark = root.dataset.theme
+        ? root.dataset.theme === 'dark'
+        : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+      try { localStorage.setItem('silk-theme', root.dataset.theme); } catch (_) {}
+    });
   </script>
 </body>
 </html>

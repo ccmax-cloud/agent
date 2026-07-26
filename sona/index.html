@@ -45,7 +45,7 @@
         <silk-tab label="全部曲目"><ul class="silk-list" id="trackList"></ul></silk-tab>
         <silk-tab label="我的创作">
           <ul class="silk-list" id="mineList"></ul>
-          <p class="empty" id="mineEmpty" hidden>还没有你的作品——去声音工坊造一首。</p>
+          <p class="empty" id="mineEmpty" hidden>还没有作品。去声音工坊生成一首。</p>
         </silk-tab>
       </silk-tabs>
     </section>
@@ -74,7 +74,7 @@
         </silk-dropdown>
       </div>
       <ul class="silk-list" id="plTracks"></ul>
-      <p class="empty" id="plEmpty" hidden>这个歌单还空着——从「全部曲目」里加几首。</p>
+      <p class="empty" id="plEmpty" hidden>歌单还是空的。从「全部曲目」添加。</p>
     </section>
 
     <!-- 队列 -->
@@ -86,7 +86,7 @@
         <button class="silk-btn" data-variant="ghost" id="qClear">清空</button>
       </div>
       <ul class="silk-list" id="queueList"></ul>
-      <p class="empty" id="qEmpty" hidden>队列是空的。挑首歌,或者让沉默继续。</p>
+      <p class="empty" id="qEmpty" hidden>队列是空的。</p>
     </section>
 
     <!-- 声音工坊 -->
@@ -107,7 +107,7 @@
           <p class="f-label">种子</p>
           <div class="seed-row">
             <label class="silk-input"><span>SEED</span><input id="seedInput" inputmode="numeric" value="42"></label>
-            <button class="silk-btn" id="diceBtn" aria-label="随机种子">🎲 掷一个</button>
+            <button class="silk-btn" id="diceBtn" aria-label="随机种子">随机</button>
           </div>
           <div class="forge-actions">
             <button class="silk-btn" data-variant="ghost" id="previewBtn">试听</button>
@@ -116,7 +116,7 @@
         </div>
         <div class="silk-card forge-preview">
           <div class="f-disc" id="forgeDisc"></div>
-          <p class="dim center">同一颗种子,永远长出同一首歌。<br>掷骰子只是仪式——结果早已注定。</p>
+          <p class="dim center">同一个种子永远生成同一首曲子。</p>
         </div>
       </div>
     </section>
