@@ -47,10 +47,13 @@ graph TD
 
 ```js
 // 官方曲目(data.js,只读)
-Track    { id, title, artist, album, dur, hue, seed, mood }
+Track    { id, title, artist, album, dur, hue, seed, mood,
+           lyrics: [{ t, line }] }   // 时间戳诗行,驱动重力歌词页
 
 // 用户自定义曲目(声音工坊产物)—— 与官方曲目同构,id 前缀 'u'
-UserTrack{ id: 'u<ts>', title, artist: '我', dur, hue, seed, mood, createdAt }
+// lyrics 可选:工坊从种子化诗行模板池自动生成,用户可改
+UserTrack{ id: 'u<ts>', title, artist: '我', dur, hue, seed, mood,
+           lyrics?, createdAt }
 
 // 用户歌单
 Playlist { id: 'up<ts>', name, desc, hue, trackIds: [], createdAt, updatedAt }
