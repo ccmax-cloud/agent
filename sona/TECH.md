@@ -58,8 +58,10 @@ UserTrack{ id: 'u<ts>', title, artist: '我', dur, hue, seed, mood,
 // 用户歌单
 Playlist { id: 'up<ts>', name, desc, hue, trackIds: [], createdAt, updatedAt }
 
-// 播放器状态(会话恢复)
-PlayerState { queue: [], index, shuffle, repeat: 'off'|'all'|'one', volume }
+// 播放器状态(会话恢复)。sourceQueue = 手动顺序,playOrder = 实际播放
+// 顺序,均为条目 id 的平行数组(不用索引——增删会使索引位移损坏排列)
+PlayerState { sourceQueue: [], playOrder: [], index,
+              shuffle, repeat: 'off'|'all'|'one', volume }
 
 // localStorage 键位
 sona.v1.playlists   // Playlist[]
@@ -73,7 +75,14 @@ sona.v1.meta        // { schema: 1 }
 Toast 明示"本次更改不会被保存",功能不阻断。
 
 **导入导出**:`{ schema: 1, playlists, tracks }` 单 JSON 文件;导入时
-逐条校验字段与类型,冲突 id 重新生成,非法条目跳过并汇报计数。
+逐条校验字段与类型,冲突 id 重新生成并建立 **oldId→newId 映射**,应用到
+导入歌单的 trackIds;非法条目跳过、其 id 从导入歌单中剪除,最终汇报计数。
+
+**引用完整性**:UI 解引用 trackId 一律经单一入口 `resolve(id)`(官方曲库
+→ 用户曲目 → null,null 渲染为「已失效」占位行)。删除 UserTrack 级联:
+从所有 Playlist.trackIds、sourceQueue/playOrder 与持久化队列中剪除并修正
+index;若为当前播放曲,先自动切下一首。启动加载时过滤无法解析的 id,
+有修复时以 Toast 汇报数量。
 
 ## 5. 播放内核(已实现,见 audio.js)
 
@@ -83,8 +92,14 @@ Toast 明示"本次更改不会被保存",功能不阻断。
 - **音色分层**:pad(双失谐锯齿+低通)/ 五声琶音 / 贝斯 / 鼓组(按
   mood 启用),经压缩器 + 反馈延迟空间
 - **对外**:`load/play/pause/toggle/seek/setVolume/getTime/getAnalyser/onEnded`
+- **确定性边界**:噪声缓冲亦由种子化 PRNG 填充(0x5EED),两个全新引擎
+  实例的输出可复现;跨 seek 为**调度级确定**(pad 尾音随 seek 路径不同),
+  验收断言调度确定性/频谱快照,而非跨 seek 波形逐字节一致
 - **扩展点**:声音工坊只需构造 `{ seed, mood, dur, hue }` 即得新曲目,
   引擎无需改动
+- **试听通道**:`createEngine()` 是多实例工厂,声音工坊持有**独立的第二
+  实例**(各自 analyser/onEnded 互不干扰);`forgePreviewStart` 暂停主
+  播放,试听状态在 store 的 forge 切片,**不写入**持久化的 PlayerState
 
 ## 6. 状态管理
 
@@ -96,11 +111,14 @@ store = createStore({
 })
 // action 白名单:playTrack, togglePlay, seek, next, prev, setShuffle,
 // setRepeat, setVolume, queueAdd/Remove/Reorder, playlistCreate/Rename/
-// Delete/AddTrack/RemoveTrack/Reorder, trackForge(声音工坊), importData…
+// Delete/AddTrack/RemoveTrack/Reorder, trackForge/trackRename/trackDelete,
+// forgePreviewStart/Stop, importData, exportData
 ```
 
-订阅粒度到路径(如 `player.playing`),避免整树重渲。持久化 action 在
-微任务尾部合并写入(防抖 300ms)。
+订阅粒度到路径(如 `player.playing`),避免整树重渲。**持久化分两道**:
+用户数据(playlists/tracks)在 action 内**同步直写**,不防抖;高频播放
+状态(player)防抖 300ms,并在 `pagehide` 与 `visibilitychange→hidden`
+时强制 flush(不单独依赖 beforeunload——移动端不可靠)。
 
 ## 7. 性能预算
 

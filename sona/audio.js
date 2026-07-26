@@ -83,7 +83,10 @@ export function createEngine() {
 
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
     const d = noiseBuf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    // Seeded fill: two fresh engine instances must produce identical output
+    // (the forge's determinism acceptance depends on it).
+    const nr = mulberry32(0x5EED);
+    for (let i = 0; i < d.length; i++) d[i] = nr() * 2 - 1;
   }
 
   function newSeg() {
