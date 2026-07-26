@@ -1,0 +1,234 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script type="module">
+import { createStore } from '../store.js';
+import { createPersist } from '../persist.js';
+import { createFlags } from '../flags.js';
+import { TRACKS } from '../data.js';
+
+const results = [];
+const ok = (name, cond) => results.push({ name, pass: !!cond });
+
+function mockEngine() {
+  const calls = [];
+  let endedCb = null, time = 0;
+  return {
+    calls,
+    setTime: (t) => { time = t; },
+    fireEnded: () => endedCb && endedCb(),
+    load: (t, o) => calls.push(['load', t.id, !!(o && o.autoplay)]),
+    play: () => calls.push(['play']),
+    pause: () => calls.push(['pause']),
+    toggle: () => calls.push(['toggle']),
+    seek: (s) => calls.push(['seek', s]),
+    setVolume: () => {},
+    getTime: () => time,
+    onEnded: (cb) => { endedCb = cb; },
+  };
+}
+function mockStorage() {
+  const m = {};
+  return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = v; }, _m: m };
+}
+
+const ids = TRACKS.slice(0, 4).map((t) => t.id); // [A,B,C,D]
+
+/* ===== 1. next/prev 真值表 ===== */
+{
+  const eng = mockEngine();
+  const s = createStore({ engine: eng });
+  s.actions.playContext(ids, 0);
+  ok('播放上下文从首曲开始', s.currentTrack().id === ids[0]);
+
+  // repeat=off,非末尾 next → 下一首
+  s.actions.next();
+  ok('off·next(非E) 下一首', s.currentTrack().id === ids[1]);
+  // 跳到末尾
+  s.actions.next(); s.actions.next();
+  ok('到达末曲', s.currentTrack().id === ids[3] && s.state.player.playing);
+  // off + E:停止,停留末曲
+  s.actions.next();
+  ok('off·next(E) 停止停留末曲', s.currentTrack().id === ids[3] && !s.state.player.playing);
+
+  // repeat=all + E:回到 playOrder[0]
+  s.actions.cycleRepeat(); // off->all
+  s.actions.next();
+  ok('all·next(E) 回首曲', s.currentTrack().id === ids[0] && s.state.player.playing);
+
+  // prev:已播>3s 回 0s
+  eng.setTime(5);
+  const before = eng.calls.length;
+  s.actions.prev();
+  ok('prev(>3s) 回本曲0s', s.currentTrack().id === ids[0] &&
+     eng.calls.slice(before).some((c) => c[0] === 'seek' && c[1] === 0));
+  // prev ≤3s 且首曲 → 回 0s(不越界)
+  eng.setTime(1);
+  s.actions.prev();
+  ok('prev(≤3s·首曲) 回0s', s.currentTrack().id === ids[0]);
+  // prev ≤3s 非首曲 → 上一首
+  s.actions.next(); eng.setTime(1);
+  s.actions.prev();
+  ok('prev(≤3s) 上一首', s.currentTrack().id === ids[0]);
+}
+
+/* ===== 2. repeat=one:自然播完重播,手动切曲切走 ===== */
+{
+  const eng = mockEngine();
+  const s = createStore({ engine: eng });
+  s.actions.playContext(ids, 1);
+  s.actions.cycleRepeat(); s.actions.cycleRepeat(); // off->all->one
+  const before = eng.calls.length;
+  eng.fireEnded();
+  ok('one·自然播完 重播本曲', s.currentTrack().id === ids[1] &&
+     eng.calls.slice(before).some((c) => c[0] === 'seek' && c[1] === 0));
+  s.actions.next();
+  ok('one·手动next 切走', s.currentTrack().id === ids[2]);
+  // one + E 手动 next → 回首(同 all)
+  s.actions.next();
+  s.actions.next();
+  ok('one·next(E) 回首曲', s.currentTrack().id === ids[0]);
+}
+
+/* ===== 3. 随机:当前曲置首、排列完整、关闭恢复 ===== */
+{
+  const eng = mockEngine();
+  const s = createStore({ engine: eng });
+  s.actions.playContext(ids, 2); // 当前 C
+  s.actions.setShuffle(true);
+  const po = s.state.player.playOrder;
+  ok('随机开:当前曲在 playOrder[0]', s.currentTrack().id === ids[2] && s.state.player.index === 0);
+  ok('随机开:playOrder 是 sourceQueue 的排列',
+     [...po].sort().join() === [...s.state.player.sourceQueue].sort().join());
+  s.actions.setShuffle(false);
+  ok('随机关:恢复手动顺序且当前曲对位',
+     s.state.player.playOrder.join() === s.state.player.sourceQueue.join() &&
+     s.currentTrack().id === ids[2]);
+}
+
+/* ===== 4. 队列编辑 ===== */
+{
+  const eng = mockEngine();
+  const s = createStore({ engine: eng });
+  s.actions.playContext(ids.slice(0, 2), 0);   // [A,B],当前 A
+  s.actions.queueAdd(ids[2]);                  // 尾插 C
+  ok('加入队列=追加末尾', s.state.player.playOrder.length === 3 &&
+     s.resolve(s.state.player.entries[s.state.player.playOrder[2]]).id === ids[2]);
+  s.actions.queueAddNext(ids[3]);              // 当前之后插 D
+  ok('下一首播放=插当前后', s.resolve(s.state.player.entries[s.state.player.playOrder[1]]).id === ids[3]);
+  // 同曲二次入队(条目模型)
+  s.actions.queueAdd(ids[3]);
+  ok('同曲可多次入队', s.state.player.playOrder.length === 5);
+  // 移除当前 → 自动切下一首
+  s.actions.queueRemove(0);
+  ok('移除当前曲切下一首', s.currentTrack().id === ids[3] && s.state.player.index === 0);
+  // 移除 index 之前 → index--
+  s.actions.next(); // 到 B(index1)
+  const idxBefore = s.state.player.index;
+  s.actions.queueRemove(0);
+  ok('移除 index 前一项 index--', s.state.player.index === idxBefore - 1 && s.currentTrack().id === ids[1]);
+  // 重排镜像(随机关)
+  s.actions.queueReorder(0, s.state.player.playOrder.length - 1);
+  ok('随机关:重排镜像到手动顺序',
+     s.state.player.playOrder.join() === s.state.player.sourceQueue.join());
+  // 清空 → 停止
+  s.actions.queueClear();
+  ok('清空队列停止', s.state.player.index === -1 && !s.state.player.playing && !s.currentTrack());
+}
+
+/* ===== 5. 歌单 CRUD + 免费层上限 ===== */
+{
+  const flags = createFlags('free');
+  const st = mockStorage();
+  const s = createStore({ engine: mockEngine(), persist: createPersist(st), flags });
+  let limitMsg = null;
+  s.onNotify((m) => { if (m.type === 'limit') limitMsg = m; });
+  const p1 = s.actions.playlistCreate('深夜', '', 262);
+  const p2 = s.actions.playlistCreate('通勤', '', 8);
+  const p3 = s.actions.playlistCreate('第三个');
+  ok('免费层第3歌单被拦截', p1 && p2 && p3 === null && limitMsg && limitMsg.kind === 'playlists');
+  flags.upgrade();
+  ok('升级后可继续建', !!s.actions.playlistCreate('第三个'));
+  s.actions.playlistAddTrack(p1.id, ids[0]);
+  s.actions.playlistAddTrack(p1.id, ids[1]);
+  s.actions.playlistReorder(p1.id, 0, 1);
+  ok('歌单排序', s.state.library.userPlaylists[0].trackIds.join() === [ids[1], ids[0]].join());
+  ok('用户数据同步直写', JSON.parse(st._m['sona.v1.playlists']).length === 3);
+  const removed = s.actions.playlistDelete(p2.id);
+  s.actions.playlistRestore(removed, 1);
+  ok('删除+撤销恢复', s.state.library.userPlaylists[1].id === p2.id);
+}
+
+/* ===== 6. 工坊上限 + 删一再造 + 级联 ===== */
+{
+  const flags = createFlags('free');
+  const st = mockStorage();
+  const eng = mockEngine();
+  const s = createStore({ engine: eng, persist: createPersist(st), flags });
+  const t1 = s.actions.trackForge({ title: '一', mood: 'calm', hue: 400, dur: 999, seed: 7.9 });
+  ok('工坊输入规范化', t1.hue === 40 && t1.dur === 300 && t1.seed === 7);
+  const t2 = s.actions.trackForge({ title: '二', mood: 'drive', hue: 10, dur: 90, seed: 2 });
+  s.actions.trackForge({ title: '三', mood: 'bright', hue: 20, dur: 80, seed: 3 });
+  ok('免费层第4曲被拦截', s.actions.trackForge({ title: '四', mood: 'calm', hue: 1, dur: 70, seed: 4 }) === null);
+  // 级联:入歌单+队列后删除
+  const pl = s.actions.playlistCreate('测试');
+  s.actions.playlistAddTrack(pl.id, t1.id);
+  s.actions.playlistAddTrack(pl.id, ids[0]);
+  s.actions.playContext([t1.id, ids[0], t2.id], 0);  // 当前 = t1
+  s.actions.trackDelete(t1.id);
+  ok('删除级联:歌单剪除', !s.state.library.userPlaylists.find(x=>x.id===pl.id).trackIds.includes(t1.id));
+  ok('删除级联:队列剪除+当前切下一首',
+     s.state.player.playOrder.length === 2 && s.currentTrack().id === ids[0]);
+  ok('删一后可再造', s.actions.trackForge({ title: '四', mood: 'calm', hue: 1, dur: 70, seed: 4 }) !== null);
+}
+
+/* ===== 7. 导入:混合合法性 + id 冲突重映射 + 悬空剪除 ===== */
+{
+  const s = createStore({ engine: mockEngine() });
+  const existing = s.actions.trackForge({ title: '占位', mood: 'calm', hue: 0, dur: 100, seed: 1 });
+  const report = s.actions.importData(JSON.stringify({
+    schema: 1,
+    tracks: [
+      { id: existing.id, title: '冲突曲', seed: 9, dur: 120, mood: 'drive', hue: 50 }, // id 冲突 → 重映射
+      { id: 'uX', title: '合法曲', seed: 5, dur: 100, mood: 'calm', hue: 10 },
+      { id: 'uBad', title: 42, seed: 'x', dur: 'y', mood: 'nope' },                    // 非法 → 跳过
+    ],
+    playlists: [
+      { id: 'pl1', name: '导入单', trackIds: [existing.id, 'uX', 'ghost-999'] },       // ghost 剪除
+    ],
+  }));
+  ok('导入报告正确', report.ok && report.tracks === 2 && report.skipped === 1 && report.playlists === 1 && report.pruned === 1);
+  const pl = s.state.library.userPlaylists.find((x) => x.name === '导入单');
+  const remapped = pl.trackIds[0];
+  ok('冲突 id 重映射后引用有效', remapped !== existing.id && s.resolve(remapped) &&
+     s.resolve(remapped).title === '冲突曲' && pl.trackIds.length === 2);
+  ok('非法 JSON 不崩溃', s.actions.importData('{{{').ok === false);
+}
+
+/* ===== 8. 会话恢复:悬空剪除 + 随机顺序持久化 ===== */
+{
+  const st = mockStorage();
+  const eng1 = mockEngine();
+  const s1 = createStore({ engine: eng1, persist: createPersist(st) });
+  s1.actions.playContext(ids, 0);
+  s1.actions.setShuffle(true);
+  s1.flush();
+  const savedOrder = s1.state.player.playOrder.map((e) => s1.state.player.entries[e]);
+  // 新 store 从同一 storage 恢复
+  const s2 = createStore({ engine: mockEngine(), persist: createPersist(st) });
+  s2.actions.restorePlayer();
+  const restoredOrder = s2.state.player.playOrder.map((e) => s2.state.player.entries[e]);
+  ok('随机顺序刷新后一致', restoredOrder.join() === savedOrder.join() && s2.state.player.shuffle);
+  // 悬空:手工塞一个 ghost 条目
+  const snap = JSON.parse(st._m['sona.v1.player']);
+  snap.entries['e999'] = 'ghost-x';
+  snap.playOrder.push('e999');
+  st._m['sona.v1.player'] = JSON.stringify(snap);
+  const s3 = createStore({ engine: mockEngine(), persist: createPersist(st) });
+  let repair = null;
+  s3.onNotify((m) => { if (m.type === 'repair') repair = m; });
+  s3.actions.restorePlayer();
+  ok('恢复时剪除悬空引用并汇报', s3.state.player.playOrder.length === savedOrder.length && repair !== null);
+}
+
+window.__results = results;
+</script>
+</body></html>
