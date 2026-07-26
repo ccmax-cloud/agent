@@ -1,0 +1,23 @@
+[project]
+name = "agent-scaffold"
+version = "0.1.0"
+description = "一个简洁、可扩展的 Claude Agent 基架：Agent 循环 + 工具系统 + 记忆 + 流式 CLI"
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.70.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+agent = "agent_core.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["agent_core*"]
