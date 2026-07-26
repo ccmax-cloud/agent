@@ -1,0 +1,467 @@
+/* ==========================================================================
+   SILK · 丝 — 组件样式
+   静态组件 = 类(.silk-*);行为组件 = 自定义元素(silk-*,见 silk.js)。
+   三条铁律:退场永远 --silk-glide 且约为入场 0.6 倍;--silk-spring 永不
+   用于退场;动画只碰 transform/opacity(具名豁免:颜色类过渡)。
+   ========================================================================== */
+
+@import url("tokens.css");
+
+/* ---------- 基础 ---------- */
+
+.silk-root,
+body:has(> .silk-demo) {
+  font-family: var(--silk-font);
+  color: var(--silk-ink);
+  background: var(--silk-bg);
+  transition: background-color var(--silk-med) var(--silk-glide),
+              color var(--silk-med) var(--silk-glide);
+}
+
+.silk-focusable:focus-visible,
+.silk-btn:focus-visible, .silk-icon-btn:focus-visible,
+silk-slider:focus-visible, silk-switch:focus-visible,
+silk-tabs .silk-tab-btn:focus-visible,
+silk-dropdown .silk-menu button:focus-visible,
+.silk-input input:focus-visible {
+  outline: 2px solid var(--silk-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+  transition: none; /* 焦点环零延迟即现 */
+}
+
+/* ---------- Button ---------- */
+
+.silk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font: 600 0.875rem/1 var(--silk-font);
+  color: var(--silk-ink);
+  background: var(--silk-surface-2);
+  border: 0;
+  border-radius: 999px;
+  padding: 0 1.05rem;
+  height: 38px;
+  cursor: pointer;
+  transition: background-color var(--silk-fast) ease,
+              color var(--silk-fast) ease,
+              box-shadow var(--silk-fast) ease,
+              transform var(--silk-fast) var(--silk-pop);
+}
+.silk-btn:hover { background: var(--silk-hairline); }
+.silk-btn:active { transform: scale(0.96); }
+.silk-btn[data-variant="primary"] { background: var(--silk-accent); color: var(--silk-accent-ink); }
+.silk-btn[data-variant="primary"]:hover {
+  background: color-mix(in srgb, var(--silk-accent) 88%, var(--silk-ink));
+  box-shadow: var(--silk-shadow-1);
+}
+.silk-btn[data-variant="ghost"] { background: transparent; box-shadow: inset 0 0 0 1px var(--silk-hairline); }
+.silk-btn[data-variant="ghost"]:hover { background: var(--silk-surface-2); }
+.silk-btn[data-variant="danger"] { background: var(--silk-danger); color: #fff; }
+.silk-btn[data-size="sm"] { height: 30px; padding: 0 0.8rem; font-size: 0.8rem; }
+.silk-btn[data-size="lg"] { height: 46px; padding: 0 1.4rem; font-size: 0.95rem; }
+.silk-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.silk-btn svg { width: 1.1em; height: 1.1em; }
+
+/* ---------- IconButton(按得更深:0.90) ---------- */
+
+.silk-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px; height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--silk-muted);
+  cursor: pointer;
+  transition: background-color var(--silk-fast) ease,
+              color var(--silk-fast) ease,
+              transform var(--silk-fast) var(--silk-pop);
+}
+.silk-icon-btn:hover { background: var(--silk-surface-2); color: var(--silk-ink); }
+.silk-icon-btn:active { transform: scale(0.90); }
+.silk-icon-btn[data-active] { color: var(--silk-accent); }
+.silk-icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.silk-icon-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* ---------- Input ---------- */
+
+.silk-input { display: flex; flex-direction: column; gap: 0.4rem; }
+.silk-input > span {
+  font: 500 0.75rem/1 var(--silk-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--silk-muted);
+}
+.silk-input input {
+  font: inherit;
+  color: var(--silk-ink);
+  background: var(--silk-surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--silk-r-md);
+  height: 42px;
+  padding: 0 0.9rem;
+  transition: background-color var(--silk-fast) ease,
+              border-color var(--silk-fast) ease,
+              box-shadow var(--silk-med) var(--silk-glide);
+}
+.silk-input input::placeholder { color: var(--silk-muted); }
+.silk-input input:focus { background: var(--silk-surface); border-color: var(--silk-hairline); box-shadow: var(--silk-shadow-1); outline: none; }
+.silk-input[data-error] input { border-color: var(--silk-danger); }
+.silk-input .silk-error {
+  font-size: 0.75rem;
+  color: var(--silk-danger);
+  min-height: 1em;
+}
+.silk-input[data-error] .silk-error { animation: silk-shake var(--silk-med) linear; }
+@keyframes silk-shake {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-4px); }
+  60% { transform: translateX(4px); }
+}
+
+/* ---------- Slider ---------- */
+
+silk-slider {
+  display: block;
+  position: relative;
+  height: 28px;
+  cursor: pointer;
+  touch-action: none;
+}
+silk-slider .silk-track {
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--silk-surface-2);
+  overflow: hidden;
+}
+silk-slider .silk-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--silk-value, 0%);
+  background: var(--silk-accent);
+}
+silk-slider .silk-thumb {
+  position: absolute;
+  top: 50%;
+  left: var(--silk-value, 0%);
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--silk-ink);
+  box-shadow: var(--silk-shadow-1);
+  transition: transform var(--silk-fast) var(--silk-pop);
+}
+silk-slider:hover .silk-thumb { transform: scale(1.2); }
+silk-slider[data-dragging] .silk-thumb { transform: scale(1.35); transition: none; }
+silk-slider.silk-thumb-release .silk-thumb { transition: transform var(--silk-med) var(--silk-spring); }
+silk-slider[disabled] { opacity: 0.45; pointer-events: none; }
+
+/* ---------- Switch(行程走弹簧) ---------- */
+
+silk-switch {
+  display: inline-block;
+  width: 44px; height: 26px;
+  border-radius: 999px;
+  background: var(--silk-surface-2);
+  box-shadow: inset 0 0 0 1px var(--silk-hairline);
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--silk-med) ease, box-shadow var(--silk-med) ease;
+}
+silk-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--silk-surface);
+  box-shadow: var(--silk-shadow-1);
+  transition: transform var(--silk-med) var(--silk-spring);
+}
+silk-switch:active::after { transform: scaleX(1.2); transform-origin: left center; }
+silk-switch[checked] { background: var(--silk-accent); box-shadow: none; }
+silk-switch[checked]::after { transform: translateX(18px); }
+silk-switch[checked]:active::after { transform: translateX(18px) scaleX(1.2); transform-origin: right center; }
+
+/* ---------- Tabs(指示器弹簧落定) ---------- */
+
+silk-tabs { display: block; }
+silk-tabs .silk-tablist {
+  position: relative;
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--silk-hairline);
+  padding-bottom: 2px;
+}
+silk-tabs .silk-tab-btn {
+  font: 600 0.9rem/1 var(--silk-font);
+  color: var(--silk-muted);
+  background: none;
+  border: 0;
+  border-radius: var(--silk-r-sm);
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  transition: color var(--silk-fast) ease, background-color var(--silk-fast) ease,
+              transform var(--silk-fast) var(--silk-pop);
+}
+silk-tabs .silk-tab-btn:hover { background: var(--silk-surface-2); color: var(--silk-ink); }
+silk-tabs .silk-tab-btn:active { transform: scale(0.96); }
+silk-tabs .silk-tab-btn[aria-selected="true"] { color: var(--silk-ink); }
+silk-tabs .silk-indicator {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  width: 40px;
+  background: var(--silk-accent);
+  border-radius: 1px;
+  transform-origin: left center;
+  transition: transform var(--silk-med) var(--silk-spring);
+}
+silk-tab { display: block; padding-top: var(--silk-gap-3); }
+silk-tab[hidden] { display: none; }
+
+/* ---------- Card ---------- */
+
+.silk-card {
+  background: var(--silk-surface);
+  border: 1px solid var(--silk-hairline);
+  border-radius: var(--silk-r-lg);
+  padding: var(--silk-gap-3);
+  transition: transform var(--silk-med) var(--silk-glide),
+              box-shadow var(--silk-med) ease,
+              background-color var(--silk-med) ease,
+              border-color var(--silk-med) ease;
+}
+.silk-card[data-hover]:hover { transform: translateY(-4px) scale(1.015); box-shadow: var(--silk-shadow-2); }
+.silk-card[data-hover]:active { transform: translateY(-1px) scale(0.99); }
+
+/* ---------- List ---------- */
+
+.silk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.silk-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--silk-gap-3);
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--silk-r-md);
+  cursor: pointer;
+  transition: background-color var(--silk-fast) ease, transform var(--silk-fast) ease;
+}
+.silk-list-item:hover { background: var(--silk-surface-2); }
+.silk-list-item:active { transform: scale(0.995); }
+.silk-list-item[data-active] { background: color-mix(in srgb, var(--silk-accent) 10%, transparent); }
+.silk-list-item .silk-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity var(--silk-fast) var(--silk-glide), transform var(--silk-fast) var(--silk-glide);
+}
+.silk-list-item:hover .silk-actions,
+.silk-list-item:focus-within .silk-actions { opacity: 1; transform: none; }
+@media (hover: none) { .silk-list-item .silk-actions { opacity: 1; transform: none; } }
+
+/* ---------- Modal ---------- */
+
+silk-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--silk-gap-4);
+}
+silk-modal:not([open]) { display: none; }
+silk-modal .silk-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--silk-scrim);
+  animation: silk-fade-in var(--silk-med) ease;
+}
+silk-modal .silk-panel {
+  position: relative;
+  width: min(440px, 100%);
+  background: var(--silk-surface);
+  border: 1px solid var(--silk-hairline);
+  border-radius: var(--silk-r-lg);
+  box-shadow: var(--silk-shadow-2);
+  padding: var(--silk-gap-4);
+  outline: none;
+  animation: silk-panel-in var(--silk-slow) var(--silk-spring);
+}
+silk-modal[data-closing] .silk-panel { animation: silk-panel-out var(--silk-med) var(--silk-glide) forwards; }
+silk-modal[data-closing] .silk-scrim { animation: silk-fade-out var(--silk-med) ease forwards; }
+silk-modal h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+silk-modal .silk-modal-body { color: var(--silk-muted); font-size: 0.9rem; line-height: 1.6; }
+silk-modal .silk-modal-foot { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: var(--silk-gap-4); }
+@keyframes silk-fade-in { from { opacity: 0; } }
+@keyframes silk-fade-out { to { opacity: 0; } }
+@keyframes silk-panel-in { from { opacity: 0; transform: translateY(28px) scale(0.96); } }
+@keyframes silk-panel-out { to { opacity: 0; transform: translateY(12px) scale(0.98); } }
+
+/* ---------- Toast ---------- */
+
+.silk-toasts {
+  position: fixed;
+  left: 50%;
+  bottom: 1.4rem;
+  translate: -50%;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.silk-toast {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 1.1rem;
+  background: var(--silk-ink);
+  color: var(--silk-bg);
+  border-radius: 999px;
+  font: 600 0.85rem/1.3 var(--silk-font);
+  box-shadow: var(--silk-shadow-2);
+  pointer-events: auto;
+  animation: silk-toast-in var(--silk-med) var(--silk-spring);
+}
+.silk-toast.silk-leaving { animation: silk-toast-out var(--silk-fast) var(--silk-glide) forwards; }
+.silk-toast button {
+  font: 700 0.8rem/1 var(--silk-font);
+  color: var(--silk-accent);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+}
+[data-theme="dark"] .silk-toast button { color: #A9A9F7; }
+@keyframes silk-toast-in { from { opacity: 0; transform: translateY(18px) scale(0.9); } }
+@keyframes silk-toast-out { to { opacity: 0; transform: translateY(10px) scale(0.94); } }
+
+/* ---------- Dropdown ---------- */
+
+silk-dropdown { position: relative; display: inline-block; }
+silk-dropdown .silk-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  padding: 0.4rem;
+  background: var(--silk-surface);
+  border: 1px solid var(--silk-hairline);
+  border-radius: var(--silk-r-md);
+  box-shadow: var(--silk-shadow-2);
+  display: flex;
+  flex-direction: column;
+  z-index: 90;
+  transform-origin: top left;
+  animation: silk-menu-in var(--silk-med) var(--silk-spring);
+}
+silk-dropdown[data-up] .silk-menu { top: auto; bottom: calc(100% + 8px); transform-origin: bottom left; }
+silk-dropdown:not([open]) .silk-menu { display: none; }
+silk-dropdown .silk-menu button {
+  font: 500 0.875rem/1 var(--silk-font);
+  color: var(--silk-ink);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: var(--silk-r-sm);
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  transition: background-color var(--silk-fast) ease;
+}
+silk-dropdown .silk-menu button:hover,
+silk-dropdown .silk-menu button:focus-visible { background: var(--silk-surface-2); outline: none; }
+silk-dropdown .silk-menu hr { border: 0; border-top: 1px solid var(--silk-hairline); margin: 0.3rem 0; }
+@keyframes silk-menu-in { from { opacity: 0; transform: scale(0.92) translateY(-6px); } }
+
+/* ---------- Skeleton ---------- */
+
+.silk-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--silk-surface-2);
+  border-radius: var(--silk-r-md);
+}
+.silk-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%,
+    color-mix(in srgb, var(--silk-ink) 6%, transparent) 50%, transparent 70%);
+  animation: silk-shimmer 1.2s linear infinite;
+}
+.silk-skeleton[data-variant="line"] { height: 14px; border-radius: 7px; }
+.silk-skeleton[data-variant="circle"] { border-radius: 50%; aspect-ratio: 1; }
+@keyframes silk-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+/* ---------- Badge · Avatar ---------- */
+
+.silk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: 600 0.7rem/1 var(--silk-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--silk-muted);
+  background: var(--silk-surface-2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+}
+.silk-badge[data-tone="accent"] { color: var(--silk-accent); background: color-mix(in srgb, var(--silk-accent) 12%, transparent); }
+.silk-badge[data-tone="live"]::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--silk-accent);
+  animation: silk-pulse 2s ease-in-out infinite;
+}
+@keyframes silk-pulse { 50% { opacity: 0.4; } }
+
+.silk-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--silk-av-bg, var(--silk-surface-2));
+  box-shadow: inset 0 0 0 100px rgb(15 12 10 / 0.35); /* 字符在任何色相上可读 */
+  color: #fff;
+  font: 700 0.85rem/1 var(--silk-font);
+  user-select: none;
+}
+.silk-avatar[data-size="lg"] { width: 56px; height: 56px; font-size: 1.2rem; }
+
+/* ---------- Reduced motion(静水流深) ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .silk-btn, .silk-icon-btn, .silk-card, .silk-list-item,
+  silk-tabs .silk-tab-btn { transition-duration: 0.01ms; }
+  .silk-btn:active, .silk-icon-btn:active, .silk-card[data-hover]:active,
+  silk-tabs .silk-tab-btn:active { transform: none; filter: brightness(0.92); }
+  .silk-card[data-hover]:hover { transform: none; }
+  silk-slider .silk-thumb, silk-switch::after,
+  silk-tabs .silk-indicator { transition-duration: 0.01ms; }
+  silk-modal .silk-panel, silk-modal .silk-scrim,
+  silk-dropdown .silk-menu, .silk-toast {
+    animation-duration: var(--silk-fade);
+    animation-name: silk-fade-in;
+  }
+  silk-modal[data-closing] .silk-panel,
+  silk-modal[data-closing] .silk-scrim,
+  .silk-toast.silk-leaving { animation-name: silk-fade-out; }
+  .silk-skeleton::after { animation: none; }
+  .silk-badge[data-tone="live"]::before { animation: none; }
+}

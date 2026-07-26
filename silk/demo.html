@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>SILK · 丝 — 组件画廊</title>
+  <script>
+    (() => { try { const t = localStorage.getItem('silk-theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {} })();
+  </script>
+  <link rel="stylesheet" href="silk.css">
+  <style>
+    body { margin: 0; padding: 2.5rem clamp(1rem, 5vw, 4rem) 6rem; }
+    header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2.5rem; }
+    h1 { font-size: 1.6rem; margin: 0; letter-spacing: -0.02em; }
+    h2 { font-size: 0.8rem; font-family: var(--silk-mono); letter-spacing: 0.14em;
+         text-transform: uppercase; color: var(--silk-muted); margin: 2.8rem 0 1rem;
+         border-top: 1px solid var(--silk-hairline); padding-top: 1.6rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+    .spacer { flex: 1; }
+    .w240 { width: 240px; }
+  </style>
+</head>
+<body class="silk-root">
+  <header>
+    <h1>SILK · 丝</h1>
+    <span class="silk-badge" data-tone="accent">v1.0</span>
+    <span class="spacer"></span>
+    <button class="silk-btn" id="themeBtn">切换主题</button>
+  </header>
+
+  <h2>Button</h2>
+  <div class="row">
+    <button class="silk-btn" data-variant="primary">主要操作</button>
+    <button class="silk-btn">次要操作</button>
+    <button class="silk-btn" data-variant="ghost">幽灵按钮</button>
+    <button class="silk-btn" data-variant="danger">危险操作</button>
+    <button class="silk-btn" disabled>禁用</button>
+    <button class="silk-btn" data-variant="primary" data-size="sm">小号</button>
+    <button class="silk-btn" data-variant="primary" data-size="lg">大号</button>
+  </div>
+
+  <h2>IconButton</h2>
+  <div class="row">
+    <button class="silk-icon-btn" aria-label="播放"><svg viewBox="0 0 24 24"><path d="M8.5 5.5v13l11-6.5z"/></svg></button>
+    <button class="silk-icon-btn" data-active aria-label="收藏(已激活)"><svg viewBox="0 0 24 24"><path d="M6 4h12v16l-6-4.5L6 20z"/></svg></button>
+    <button class="silk-icon-btn" disabled aria-label="禁用"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+  </div>
+
+  <h2>Input</h2>
+  <div class="row">
+    <label class="silk-input w240"><span>歌单名称</span>
+      <input placeholder="深夜写码" id="nameInput"><em class="silk-error"></em></label>
+    <label class="silk-input w240" data-error><span>曲目命名</span>
+      <input value=""><em class="silk-error">名字不能为空</em></label>
+  </div>
+
+  <h2>Slider · Switch</h2>
+  <div class="row">
+    <silk-slider class="w240" id="demoSlider" min="0" max="100" value="35" aria-label="音量"></silk-slider>
+    <span class="silk-badge" id="sliderVal">35</span>
+    <silk-switch id="demoSwitch" aria-label="随机播放"></silk-switch>
+    <silk-switch checked aria-label="循环"></silk-switch>
+  </div>
+
+  <h2>Tabs</h2>
+  <silk-tabs id="demoTabs">
+    <silk-tab label="歌单">歌单内容区 — 双击列表行播放。</silk-tab>
+    <silk-tab label="专辑">专辑内容区 — 网格布局。</silk-tab>
+    <silk-tab label="我的创作">工坊产物在这里。</silk-tab>
+  </silk-tabs>
+
+  <h2>Card · List</h2>
+  <div class="grid">
+    <div class="silk-card" data-hover>
+      <strong>悬停卡片</strong>
+      <p style="color: var(--silk-muted); font-size: 0.9rem;">translateY(-4px) + 阴影升高。</p>
+    </div>
+    <div class="silk-card">
+      <ul class="silk-list">
+        <li class="silk-list-item" data-active>
+          <span class="silk-avatar" style="--silk-av-bg: linear-gradient(135deg, hsl(262 72% 56%), hsl(314 82% 40%))">雾</span>
+          <span>子夜环线<br><small style="color: var(--silk-muted)">雾岛电台</small></span>
+          <span class="silk-actions"><button class="silk-icon-btn" aria-label="更多"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></span>
+        </li>
+        <li class="silk-list-item">
+          <span class="silk-avatar" style="--silk-av-bg: linear-gradient(135deg, hsl(196 72% 56%), hsl(248 82% 40%))">白</span>
+          <span>玻璃晴朗<br><small style="color: var(--silk-muted)">白与灰</small></span>
+          <span class="silk-actions"><button class="silk-icon-btn" aria-label="更多"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Modal · Toast · Dropdown</h2>
+  <div class="row">
+    <button class="silk-btn" data-variant="primary" id="openModal">打开 Modal</button>
+    <button class="silk-btn" id="toastBtn">普通 Toast</button>
+    <button class="silk-btn" id="toastActionBtn">可撤销 Toast</button>
+    <silk-dropdown id="demoDrop">
+      <button class="silk-btn" data-variant="ghost">更多操作 ▾</button>
+      <div class="silk-menu">
+        <button data-value="queue">加入队列</button>
+        <button data-value="next">下一首播放</button>
+        <hr>
+        <button data-value="remove">从歌单移除</button>
+      </div>
+    </silk-dropdown>
+  </div>
+
+  <h2>Skeleton · Badge · Avatar</h2>
+  <div class="row">
+    <div class="silk-skeleton" style="width: 160px; height: 90px;"></div>
+    <div style="flex: 1; max-width: 220px; display: flex; flex-direction: column; gap: 0.6rem;">
+      <div class="silk-skeleton" data-variant="line"></div>
+      <div class="silk-skeleton" data-variant="line" style="width: 60%"></div>
+    </div>
+    <div class="silk-skeleton" data-variant="circle" style="width: 48px;"></div>
+    <span class="silk-badge">默认</span>
+    <span class="silk-badge" data-tone="accent">强调</span>
+    <span class="silk-badge" data-tone="live">Live</span>
+    <span class="silk-avatar" data-size="lg" style="--silk-av-bg: linear-gradient(135deg, hsl(36 72% 56%), hsl(88 82% 40%))">曝</span>
+  </div>
+
+  <silk-modal id="demoModal" title="清空队列?">
+    <div class="silk-modal-body">队列里的 12 首曲目将被移除。正在播放的会停下来,像被抽走椅子那样。</div>
+    <div class="silk-modal-foot">
+      <button class="silk-btn" data-variant="ghost" id="modalCancel">先不了</button>
+      <button class="silk-btn" data-variant="danger" id="modalOk">清空</button>
+    </div>
+  </silk-modal>
+
+  <script type="module">
+    import { toast, toggleTheme } from './silk.js';
+
+    document.getElementById('themeBtn').addEventListener('click', () => toggleTheme());
+
+    const slider = document.getElementById('demoSlider');
+    slider.addEventListener('input', (e) => {
+      document.getElementById('sliderVal').textContent = e.detail.value;
+    });
+
+    const modal = document.getElementById('demoModal');
+    document.getElementById('openModal').addEventListener('click', () => modal.show());
+    document.getElementById('modalCancel').addEventListener('click', () => modal.close('cancel'));
+    document.getElementById('modalOk').addEventListener('click', () => {
+      modal.close('confirm');
+      toast('队列已清空。');
+    });
+
+    document.getElementById('toastBtn').addEventListener('click', () => toast('已加入队列。'));
+    document.getElementById('toastActionBtn').addEventListener('click', () =>
+      toast('歌单「深夜写码」已删除。', { actionLabel: '撤销', onAction: () => toast('又回来了。') }));
+
+    document.getElementById('demoDrop').addEventListener('select', (e) =>
+      toast(`选择了:${e.detail.value}`));
+  </script>
+</body>
+</html>

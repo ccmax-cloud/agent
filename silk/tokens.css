@@ -1,0 +1,80 @@
+/* ==========================================================================
+   SILK · 丝 — 设计令牌
+   一切组件只消费令牌;换品牌 = 改这一个文件(最少只改 --silk-accent)。
+   ========================================================================== */
+
+:root {
+  /* ---- 色彩 · 亮色(暖调中性,拒绝纯灰) ---- */
+  --silk-bg: #FAF9F7;
+  --silk-surface: #FFFFFF;
+  --silk-surface-2: #F1EFEB;
+  --silk-ink: #1B1C1E;
+  --silk-muted: #5F656D;
+  --silk-hairline: #E7E4DE;
+  --silk-accent: #5B5BD6;            /* 默认鸢尾紫蓝;一键换品牌 */
+  --silk-accent-ink: #FFFFFF;
+  --silk-danger: #D6455B;
+  --silk-scrim: rgba(20, 18, 16, 0.4);
+  --silk-shadow-1: 0 1px 2px rgba(27, 28, 30, 0.06), 0 4px 16px rgba(27, 28, 30, 0.06);
+  --silk-shadow-2: 0 2px 6px rgba(27, 28, 30, 0.08), 0 16px 48px rgba(27, 28, 30, 0.14);
+
+  /* ---- 动效(丝滑三曲线,退场永远 glide) ---- */
+  --silk-glide: cubic-bezier(0.32, 0.72, 0, 1);
+  --silk-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --silk-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%,
+    1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%,
+    1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%,
+    0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1 100%);
+  --silk-fast: 150ms;
+  --silk-med: 280ms;
+  --silk-slow: 480ms;
+  --silk-fade: 120ms;                /* reduced-motion 下唯一保留的时长 */
+
+  /* ---- 字体 ---- */
+  --silk-font: -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI",
+               Roboto, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --silk-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+
+  /* ---- 节奏 ---- */
+  --silk-r-sm: 8px;
+  --silk-r-md: 14px;
+  --silk-r-lg: 20px;
+  --silk-gap-1: 0.25rem;
+  --silk-gap-2: 0.5rem;
+  --silk-gap-3: 1rem;
+  --silk-gap-4: 1.5rem;
+  --silk-gap-5: 2.5rem;
+}
+
+/* ---- 暗色 ---- */
+[data-theme="dark"] {
+  --silk-bg: #101114;
+  --silk-surface: #17181C;
+  --silk-surface-2: #1F2126;
+  --silk-ink: #F2F2EF;
+  --silk-muted: #9BA0A8;
+  --silk-hairline: #26282E;
+  --silk-accent: #7B7BF0;
+  --silk-accent-ink: #0E0E1A;
+  --silk-danger: #F06A80;
+  --silk-scrim: rgba(0, 0, 0, 0.55);
+  --silk-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.35);
+  --silk-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 48px rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --silk-bg: #101114;
+    --silk-surface: #17181C;
+    --silk-surface-2: #1F2126;
+    --silk-ink: #F2F2EF;
+    --silk-muted: #9BA0A8;
+    --silk-hairline: #26282E;
+    --silk-accent: #7B7BF0;
+    --silk-accent-ink: #0E0E1A;
+    --silk-danger: #F06A80;
+    --silk-scrim: rgba(0, 0, 0, 0.55);
+    --silk-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.35);
+    --silk-shadow-2: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 48px rgba(0, 0, 0, 0.55);
+  }
+}
